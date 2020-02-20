@@ -16,8 +16,8 @@ const int numRowsAndCols = 9;
 //Empty 2d array that will be filled from input file
 int puzzle[numRowsAndCols][numRowsAndCols];
 
-//Current character when reading file
-char ch;
+//Current number when reading file
+int ch;
 
 //structure for passing data to threads
 struct parameters
@@ -41,7 +41,6 @@ int main() {
 	for (int row = 0; row < numRowsAndCols; row++) { //Iterate through rows
 		for (int col = 0; col < numRowsAndCols; col++) { //Iterate through columns
 			fin >> ch;
-			cout << ch;
 			puzzle[row][col] = ch;
 			cout <<" "<<puzzle[row][col]<< " ";
 			}
