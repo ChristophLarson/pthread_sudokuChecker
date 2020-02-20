@@ -11,9 +11,13 @@ using namespace std;
 9 threads to check 3x3 squares
 */
 const int numThreads = 11;
+const int numRowsAndCols = 9;
 
 //Empty 2d array that will be filled from input file
-int puzzle[9][9];
+int puzzle[numRowsAndCols][numRowsAndCols];
+
+//Current character when reading file
+char ch;
 
 //structure for passing data to threads
 struct parameters
@@ -34,16 +38,16 @@ int main() {
 	ifstream fin; //Input stream to read given file
 	fin.open(file, ios::in); //Opening file for reading
 
-	char ch; //Current character when reading file
-
-	for (int col = 0; col < 9; col++) { //Iterate through columns
-		for (int row = 0; row < 9; row++) { //Iterate through rows
-			fin.get(ch);
+	for (int row = 0; row < numRowsAndCols; row++) { //Iterate through rows
+		for (int col = 0; col < numRowsAndCols; col++) { //Iterate through columns
+			fin >> ch;
+			cout << ch;
 			puzzle[row][col] = ch;
-			cout << puzzle;
+			cout <<" "<<puzzle[row][col]<< " ";
+			}
 			cout << '\n';
 		}
-	}
+
 
 
 
