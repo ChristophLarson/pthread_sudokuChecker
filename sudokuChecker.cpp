@@ -10,15 +10,16 @@ using namespace std;
 1 thread to check rows
 9 threads to check 3x3 squares
 */
-const int numThreads = 11;
+const int numThreads = 12;
 const int numRowsAndCols = 9;
-
+const int numRowsColsAndSquares = 27;
 //Empty 2d array that will be filled from input file
 int puzzle[numRowsAndCols][numRowsAndCols];
 
 //Current number when reading file
 int ch;
 
+bool valid[numRowsColsAndSquares];
 //structure for passing data to threads
 struct parameters
 {
@@ -28,6 +29,7 @@ struct parameters
 
 int main() {
 
+	pthread_t threads[numThreads];
 
 	cout << "Enter the name of the text file (within this directory) that " <<
 	"you wish to check --> ";
@@ -46,6 +48,7 @@ int main() {
 			}
 			cout << '\n';
 		}
+
 
 
 
