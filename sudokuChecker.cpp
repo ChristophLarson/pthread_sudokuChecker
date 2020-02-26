@@ -118,7 +118,7 @@ void* validSquare(void* param) {
 }
 
 int main() {
-
+comp
 	// Inputting the proposed solution text file
 	cout << "Enter the name of the text file that " <<
 	"you wish to check --> ";
