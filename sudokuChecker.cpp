@@ -1,3 +1,11 @@
+/*
+Larson, Christoph
+clarso5@lsu.edu
+PA-1 (Multithreading)
+Feng Chen
+cs4103-sp20
+cs410340
+*/
 #include <iostream>
 #include <fstream>
 #include <cstdlib>
@@ -27,7 +35,7 @@ struct subsection
 };
 
 // Checks that 1-9 appear exactly once in given column
-void* validCol (void* param) {
+void  *validCol (void* param) {
 	// ensures valid column is passed
 	subsection *params = (subsection*) param;
 	int row = params->row;
@@ -44,21 +52,22 @@ void* validCol (void* param) {
 		int answer = puzzle[checkRow][col];
 		/*condition below verifies valid input and checks if the value of "answer"
 		already appears in the given column*/
-		if(appearance[answer - 1] == 1 || answer < 1 || answer > 9) {
-			//cout << "Error in a row \n";
+		if(appearance[answer-1] == 1 || answer < 1 || answer > 9) {
+			cout << "Thread " << pthread_self() << ", Column " << col << ", Invalid\n";
 			pthread_exit(NULL);
 		} else {
-			appearance[answer - 1] = 1;
+			appearance[answer-1] = 1;
 		}
 	}
 	//upon leaving for loop without exiting the thread, col is valid
 	correct[col] = 1;
+	cout << "Thread " << pthread_self() << ", Column " << col << ", Valid\n";
 	pthread_exit(NULL);
 }
 
 
 // Checks that 1-9 appear exactly once in given row
-void* validRow (void* param) {
+void *validRow (void* param) {
 // ensures valid column is passed
 subsection *params = (subsection*) param;
 int row = params->row;
@@ -75,8 +84,8 @@ for(checkCol = 0; checkCol < puzzleDimensions; checkCol++) {
 	int answer = puzzle[row][checkCol];
 	/*condition below verifies valid input and checks if the value of "answer"
 	already appears in the given row*/
-	if(appearance[answer - 1] == 1 || answer < 1 || answer > 9) {
-		//cout << "Error in a col \n";
+	if(appearance[answer-1] == 1 || answer < 1 || answer > 9) {
+		cout << "Thread " << pthread_self() << ", Row " << col << ", Invalid\n";
 		pthread_exit(NULL);
 	} else {
 		appearance[answer - 1] = 1;
@@ -85,40 +94,47 @@ for(checkCol = 0; checkCol < puzzleDimensions; checkCol++) {
 //upon leaving for loop without exiting the thread, row is valid
 correct[puzzleDimensions + row] = 1; /* offset in validity array to account for
 the already-checked columns*/
+cout << "Thread " << pthread_self() << ", Row " << col << ", Valid\n";
 pthread_exit(NULL);
 }
 
 
 // Checks that 1-9 appear exactly once in given 3x3 square
-void* validSquare(void* param) {
+void *validSquare(void* param) {
 	// Ensures valid square is passed
 	subsection *params = (subsection*) param;
 	int row = params->row;
 	int col = params->column;
-	if (row > 6 || row % 3 != 0 || col > 6 || col % 3 != 0) {
+	if (row > 6 || row%3 != 0 || col > 6 || col%3 != 0) {
 		pthread_exit(NULL);
 	}
-
-	int validityArray[9] = {0};
+	// Function logic
+	int appearance[9] = {0};
 	int checkRow, checkCol;
-	for (checkRow = row; checkRow < row + 3; checkRow++) {
-		for (checkCol = col; checkCol < col + 3; checkCol++) {
+	for (checkRow = row; checkRow < row+3; checkRow++) {
+		for (checkCol = col; checkCol < col+3; checkCol++) {
 			int answer = puzzle[checkRow][checkCol];
-			if (answer < 1 || answer > 9 || validityArray[answer - 1] == 1) {
-				//cout << "Error in a square \n";
+			if (answer < 1 || answer > 9 || appearance[answer-1] == 1) {
+				row = params->row;
+				col = params->column;// Reset these local variables to document thread
+				printf("Thread %ld, Subgrid R%d%d%dxC%d%d%d, Invalid\n", pthread_self(),
+				row, row+1, row+2, col, col+1, col+2);
 				pthread_exit(NULL);
 			} else {
-				validityArray[answer - 1] = 1;
+				appearance[answer-1] = 1;
 			}
 		}
 	}
-	validityArray[row + col + col/3] = 1; /* Maps the subsection to an index in
+	correct[18 + row + col/3] = 1; /* Maps the subsection to an index in
 	the last 8 indices of the valid array*/
+	row = params->row;
+	col = params->column;// Reset these local variables to document thread
+	printf("Thread %ld, Subgrid R%d%d%dxC%d%d%d, Valid\n", pthread_self(),
+	row, row+1, row+2, col, col+1, col+2);
 	pthread_exit(NULL);
 }
 
 int main() {
-comp
 	// Inputting the proposed solution text file
 	cout << "Enter the name of the text file that " <<
 	"you wish to check --> ";
@@ -132,16 +148,13 @@ comp
 	// Current number when reading file
 	int ch;
 
-	cout << "\nYour proposed solution is:\n";
+	//cout << "\nYour proposed solution is:\n";
 	for (int row = 0; row < puzzleDimensions; row++) { // Iterate through rows
 		for (int col = 0; col < puzzleDimensions; col++) { // Iterate through columns
 			fin >> ch;
 			puzzle[row][col] = ch;
-			cout << " " << puzzle[row][col] << " ";
 			}
-			cout <<'\n';
 		}
-			cout << "\n\n";
 
 			pthread_t threads[numThreads];
 
@@ -152,7 +165,7 @@ comp
 			for(r = 0; r < 9; r++) {
 				for(c = 0; c < 9; c++) {
 					if(r == 0) {
-						subsection *colParams = (subsection *) malloc(sizeof(subsection));
+						subsection *colParams = (subsection*) malloc(sizeof(subsection));
 						colParams->row = r;
 						colParams->column = c;
 						// Column threads
@@ -160,7 +173,7 @@ comp
 					}
 
 					if(c == 0) {
-						subsection *rowParams = (subsection *) malloc(sizeof(subsection));
+						subsection *rowParams = (subsection*) malloc(sizeof(subsection));
 						rowParams->row = r;
 						rowParams->column = c;
 						// Row threads
@@ -168,7 +181,7 @@ comp
 					}
 
 					if(c%3 == 0 && r%3 == 0) {
-						subsection *squareParams = (subsection *) malloc(sizeof(subsection));
+						subsection *squareParams = (subsection*) malloc(sizeof(subsection));
 						squareParams->row = r;
 						squareParams->column = c;
 						// 3x3 square threads
@@ -182,18 +195,5 @@ comp
 				pthread_join(threads[i], NULL); // Awaiting completion of all threads
 			}
 
-			for (i = 0; i < numThreads; i++) {
-				cout << correct[i];
-				cout << " ";
-			}
-			cout <<'\n';
-			for (i = 0; i < numThreads; i++) {
-				if(correct[i] == 0) { // Ensures every entry is valid in solution
-					cout << "Solution contained in " << file << " is incorrect. \n";
-					return 0;
-				}
-			}
-
-			cout << "Solution contained in " << file << " is correct. \n";
   return 0;
 }
