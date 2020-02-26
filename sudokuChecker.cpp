@@ -17,7 +17,7 @@ const int puzzleDimensions = 9;
 int puzzle[puzzleDimensions][puzzleDimensions];
 
 //Array shared by threads. 1 represents valid region, 0 represents invalid region
-bool correct[numThreads];
+int correct[numThreads] = {0};
 
 //Structure for passing data to threads
 struct subsection
@@ -34,8 +34,7 @@ void* validCol (void* param) {
 	int col = params->column;
 
 	if (col > 8 || row != 0) {
-		fprintf(stderr, "Error: Please select a column 0-9 and the 0th row. You chose "
-		"row %d, col %d\n", row, col);
+		pthread_exit(NULL);
 	}
 
 	// Function logic
@@ -46,6 +45,7 @@ void* validCol (void* param) {
 		/*condition below verifies valid input and checks if the value of "answer"
 		already appears in the given column*/
 		if(appearance[answer - 1] == 1 || answer < 1 || answer > 9) {
+			//cout << "Error in a row \n";
 			pthread_exit(NULL);
 		} else {
 			appearance[answer - 1] = 1;
@@ -65,8 +65,7 @@ int row = params->row;
 int col = params->column;
 
 if (row > 8 || col != 0) {
-	fprintf(stderr, "Error: Please select a row 0-9 and the 0th column. You chose "
-	"row %d, col %d\n", row, col);
+	pthread_exit(NULL);
 }
 
 // Function logic
@@ -77,13 +76,14 @@ for(checkCol = 0; checkCol < puzzleDimensions; checkCol++) {
 	/*condition below verifies valid input and checks if the value of "answer"
 	already appears in the given row*/
 	if(appearance[answer - 1] == 1 || answer < 1 || answer > 9) {
+		//cout << "Error in a col \n";
 		pthread_exit(NULL);
 	} else {
 		appearance[answer - 1] = 1;
 	}
 }
 //upon leaving for loop without exiting the thread, row is valid
-correct[row + puzzleDimensions] = 1; /* offset in validity array to account for
+correct[puzzleDimensions + row] = 1; /* offset in validity array to account for
 the already-checked columns*/
 pthread_exit(NULL);
 }
@@ -96,8 +96,6 @@ void* validSquare(void* param) {
 	int row = params->row;
 	int col = params->column;
 	if (row > 6 || row % 3 != 0 || col > 6 || col % 3 != 0) {
-		fprintf(stderr, "Error: Column and row indices must be 0, 3, or 6. "
-		"You chose row %d, col %d\n", row, col);
 		pthread_exit(NULL);
 	}
 
@@ -107,14 +105,15 @@ void* validSquare(void* param) {
 		for (checkCol = col; checkCol < col + 3; checkCol++) {
 			int answer = puzzle[checkRow][checkCol];
 			if (answer < 1 || answer > 9 || validityArray[answer - 1] == 1) {
+				//cout << "Error in a square \n";
 				pthread_exit(NULL);
 			} else {
 				validityArray[answer - 1] = 1;
 			}
 		}
 	}
-	validityArray[18 + row + col/3] = 1; /* Maps the subsection to an index in the last 8
-	indices of the valid array*/
+	validityArray[row + col + col/3] = 1; /* Maps the subsection to an index in
+	the last 8 indices of the valid array*/
 	pthread_exit(NULL);
 }
 
@@ -127,20 +126,74 @@ int main() {
 	string file; // Going to test this file for Sudoku correctness.
 	cin >> file;
 
-	ifstream fin; //Input stream to read given file
-	fin.open(file, ios::in); //Opening file for reading
+	ifstream fin; // Input stream to read given file
+	fin.open(file, ios::in); // Opening file for reading
 
-	//Current number when reading file
+	// Current number when reading file
 	int ch;
 
-	for (int row = 0; row < puzzleDimensions; row++) { //Iterate through rows
-		for (int col = 0; col < puzzleDimensions; col++) { //Iterate through columns
+	cout << "\nYour proposed solution is:\n";
+	for (int row = 0; row < puzzleDimensions; row++) { // Iterate through rows
+		for (int col = 0; col < puzzleDimensions; col++) { // Iterate through columns
 			fin >> ch;
 			puzzle[row][col] = ch;
-			cout <<" "<<puzzle[row][col]<< " ";
+			cout << " " << puzzle[row][col] << " ";
 			}
-			cout << '\n';
+			cout <<'\n';
 		}
+			cout << "\n\n";
 
+			pthread_t threads[numThreads];
+
+			int tCount = 0;
+			int r,c;
+
+			// Create 27 threads for the purposed described in the header
+			for(r = 0; r < 9; r++) {
+				for(c = 0; c < 9; c++) {
+					if(r == 0) {
+						subsection *colParams = (subsection *) malloc(sizeof(subsection));
+						colParams->row = r;
+						colParams->column = c;
+						// Column threads
+						pthread_create(&threads[tCount++], NULL, validCol, colParams);
+					}
+
+					if(c == 0) {
+						subsection *rowParams = (subsection *) malloc(sizeof(subsection));
+						rowParams->row = r;
+						rowParams->column = c;
+						// Row threads
+						pthread_create(&threads[tCount++], NULL, validRow, rowParams);
+					}
+
+					if(c%3 == 0 && r%3 == 0) {
+						subsection *squareParams = (subsection *) malloc(sizeof(subsection));
+						squareParams->row = r;
+						squareParams->column = c;
+						// 3x3 square threads
+						pthread_create(&threads[tCount++], NULL, validSquare, squareParams);
+					}
+				}
+			}
+
+			int i;
+			for (i = 0; i < numThreads; i++) {
+				pthread_join(threads[i], NULL); // Awaiting completion of all threads
+			}
+
+			for (i = 0; i < numThreads; i++) {
+				cout << correct[i];
+				cout << " ";
+			}
+			cout <<'\n';
+			for (i = 0; i < numThreads; i++) {
+				if(correct[i] == 0) { // Ensures every entry is valid in solution
+					cout << "Solution contained in " << file << " is incorrect. \n";
+					return 0;
+				}
+			}
+
+			cout << "Solution contained in " << file << " is correct. \n";
   return 0;
 }
